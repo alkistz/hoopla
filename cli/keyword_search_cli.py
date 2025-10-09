@@ -2,6 +2,8 @@
 
 import argparse
 
+from lib.keyword_search import search_titles
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Keyword Search CLI")
@@ -14,10 +16,13 @@ def main() -> None:
 
     match args.command:
         case "search":
-            print(f"Searching for: {args.query}")
+            query = args.query
+            print(f"Searching for: {query}")
+            search_result = search_titles(query)
+            for i, movie in enumerate(search_result):
+                print(f"{i + 1}. {movie['title']}")
         case _:
             parser.print_help()
-        
 
 
 if __name__ == "__main__":
