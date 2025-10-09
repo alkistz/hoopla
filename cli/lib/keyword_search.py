@@ -1,6 +1,7 @@
 import string
 
 from .search_utils import load_movies, load_stop_wrods
+from nltk.stem import PorterStemmer
 
 
 def search_titles(query: str) -> list[dict]:
@@ -29,11 +30,15 @@ def remove_stop_words(tokens: list[str]) -> list[str]:
 
 
 def check_for_match(query: str, movie_title: str) -> bool:
+    stemmer = PorterStemmer()
+    
     query_tokens = preprocess_string(query).split()
     query_tokens = remove_stop_words(query_tokens)
+    query_tokens = [stemmer.stem(token) for token in query_tokens]
 
     movie_tokens = preprocess_string(movie_title).split()
     movie_tokens = remove_stop_words(movie_tokens)
+    movie_tokens = [stemmer.stem(token) for token in movie_tokens]
 
     for query_token in query_tokens:
         for movie_token in movie_tokens:
