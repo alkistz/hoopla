@@ -49,9 +49,16 @@ class InvertedIndex:
         self.__write_to_file(self.index_path, self.index)
         self.__write_to_file(self.docmap_path, self.docmap)
 
-        docs = self.get_documents("merida")
-        print(f"First document for token 'merida' = {docs[0]}")
-
     def __write_to_file(self, pickle_file, data):
         with open(pickle_file, "wb") as file:
             pickle.dump(data, file)
+
+    def load(self):
+        if not os.path.exists(self.index_path):
+            raise FileExistsError("Index pickle does not exist")
+
+        if not os.path.exists(self.docmap_path):
+            raise FileExistsError("Docmap pickle does not exist")
+
+        # with open(self.index_path, 'rb') as file:
+        #     self.index = pickle.load()
