@@ -2,8 +2,8 @@
 
 import argparse
 
-from lib.keyword_search import search_titles
 from lib.inverted_index import InvertedIndex
+from lib.keyword_search import tokenise_text
 
 
 def main() -> None:
@@ -21,9 +21,20 @@ def main() -> None:
         case "search":
             query = args.query
             print(f"Searching for: {query}")
-            search_result = search_titles(query)
-            for i, movie in enumerate(search_result):
-                print(f"{i + 1}. {movie['title']}")
+            index = InvertedIndex()
+            index.load()
+            query_tokens = tokenise_text(query)
+            results = []
+            for token in query_tokens:
+                print(token)
+                matches = index.get_documents(token)
+                results.extend(matches)
+                if len(results) >= 5:
+                    for result in results[:5]:
+                        print("Title: " + result["title"])
+                        print("ID: " + str(result["id"]))
+                    
+
         case "build":
             print("Building the index")
             inverted_index = InvertedIndex()

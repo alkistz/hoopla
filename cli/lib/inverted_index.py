@@ -60,5 +60,10 @@ class InvertedIndex:
         if not os.path.exists(self.docmap_path):
             raise FileExistsError("Docmap pickle does not exist")
 
-        # with open(self.index_path, 'rb') as file:
-        #     self.index = pickle.load()
+        with open(self.index_path, 'rb') as file:
+            self.index = pickle.load(file)
+            print("Index loaded")
+            
+        with open(self.docmap_path, 'rb') as file:
+            self.docmap = pickle.load(file)
+            print("docmap loaded")
