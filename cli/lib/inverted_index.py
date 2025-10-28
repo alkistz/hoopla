@@ -10,6 +10,7 @@ class InvertedIndex:
     def __init__(self):
         self.index: dict[str, set] = defaultdict(set)
         self.docmap: dict[int, dict] = {}
+        self.term_frequencies: dict = {}
         self.index_path = os.path.join(CACHE_DIR, "index.pkl")
         self.docmap_path = os.path.join(CACHE_DIR, "docmap.pkl")
 
