@@ -2,8 +2,13 @@
 
 import argparse
 
-from lib.inverted_index import InvertedIndex, idf_command, tf_command, tfidf_command
-from lib.keyword_search import tokenise_text
+from lib.inverted_index import (
+    InvertedIndex,
+    idf_command,
+    tf_command,
+    tfidf_command,
+    tokenise_text,
+)
 
 
 def main() -> None:

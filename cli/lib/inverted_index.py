@@ -140,11 +140,13 @@ def tokenise_text(input_text: str) -> list[str]:
 
     return tokens
 
+
 def tf_command(doc_id: str, term: str):
     index = InvertedIndex()
     index.load()
-    
+
     return index.get_tf(doc_id, term)
+
 
 def idf_command(term: str):
     index = InvertedIndex()
