@@ -70,6 +70,30 @@ class InvertedIndex:
 
         return (tf * (k1 + 1)) / (tf + k1 * length_norm)
 
+    def bm25(self, doc_id: int, term: str) -> float:
+        return self.get_bm25_idf(term) * self.get_bm25_tf(doc_id, term)
+
+    def bm25_search(self, query: str, limit):
+        tokens = tokenise_text(query)
+        scores = {}
+
+        for doc_id in self.docmap:
+            scores[doc_id] = 0
+            for token in tokens:
+                scores[doc_id] += self.bm25(doc_id, token)
+
+        sorted_results = sorted(scores.items(), key=lambda x: x[1], reverse=True)[
+            :limit
+        ]
+
+        results = []
+        for doc_id, score in sorted_results:
+            doc = self.docmap[doc_id].copy()
+            doc["score"] = score
+            results.append(doc)
+
+        return results
+
     def build(self):
         """
         Iterate over all the movies and add them to both the index and the docmap.
@@ -209,3 +233,10 @@ def bm25_tf_command(
     index.load()
 
     return index.get_bm25_tf(doc_id, term, k1)
+
+
+def bm25search_command(query: str, limit: int = 5):
+    index = InvertedIndex()
+    index.load()
+
+    return index.bm25_search(query, limit)

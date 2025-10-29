@@ -6,6 +6,7 @@ from lib.inverted_index import (
     InvertedIndex,
     bm25_idf_command,
     bm25_tf_command,
+    bm25search_command,
     idf_command,
     tf_command,
     tfidf_command,
@@ -55,6 +56,14 @@ def main() -> None:
     )
     bm25_tf_parser.add_argument(
         "b", type=float, nargs="?", default=BM25_B, help="Tunable BM25 b parameter"
+    )
+
+    bm25search_parser = subparsers.add_parser(
+        "bm25search", help="Search movies using full BM25 scoring"
+    )
+    bm25search_parser.add_argument("query", type=str, help="Search query")
+    bm25search_parser.add_argument(
+        "limit", type=int, nargs="?", default=5, help="Limit of the search results"
     )
 
     args = parser.parse_args()
@@ -109,6 +118,13 @@ def main() -> None:
             print(
                 f"BM25 TF score of '{args.term}' in document '{args.doc_id}': {bm25_tf_score:.2f}"
             )
+
+        case "bm25search":
+            results = bm25search_command(args.query, args.limit)
+            for i, result in enumerate(results):
+                print(
+                    f"{i + 1}. ({result['id']}) {result['title']} - Score: {result['score']:.2f}"
+                )
 
         case _:
             parser.print_help()
