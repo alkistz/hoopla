@@ -26,8 +26,7 @@ def preprocess_string(input_string: str) -> str:
 
 def remove_stop_words(tokens: list[str]) -> list[str]:
     stop_words = set(load_stop_wrods())
-    sanitised_tokens = set(tokens) - stop_words
-    return list(sanitised_tokens)
+    return [token for token in tokens if token not in stop_words]
 
 
 def tokenise_text(input_text: str) -> list[str]:

@@ -15,6 +15,12 @@ def main() -> None:
 
     subparsers.add_parser("build", help="Builds and saves the index and docmap to disk")
 
+    tf_parser = subparsers.add_parser(
+        "tf", help="Returns the term frequency for a specific term"
+    )
+    tf_parser.add_argument("doc_id", type=int, help="Document ID")
+    tf_parser.add_argument("term", type=str, help="Term to seach")
+
     args = parser.parse_args()
 
     match args.command:
@@ -33,13 +39,21 @@ def main() -> None:
                     for result in results[:5]:
                         print("Title: " + result["title"])
                         print("ID: " + str(result["id"]))
-                    
 
         case "build":
             print("Building the index")
             inverted_index = InvertedIndex()
             inverted_index.build()
             inverted_index.save()
+
+        case "tf":
+            doc_id = args.doc_id
+            term = args.term
+            index = InvertedIndex()
+            index.load()
+            term_frequency = index.get_tf(doc_id, term)
+            print(term_frequency)
+
         case _:
             parser.print_help()
 
