@@ -2,7 +2,7 @@
 
 import argparse
 
-from lib.inverted_index import InvertedIndex
+from lib.inverted_index import InvertedIndex, idf_command
 from lib.keyword_search import tokenise_text
 
 
@@ -20,6 +20,9 @@ def main() -> None:
     )
     tf_parser.add_argument("doc_id", type=int, help="Document ID")
     tf_parser.add_argument("term", type=str, help="Term to seach")
+
+    idf_parser = subparsers.add_parser("idf", help="Calculate the idf for a given term")
+    idf_parser.add_argument("term", help="Term to lookup")
 
     args = parser.parse_args()
 
@@ -54,6 +57,11 @@ def main() -> None:
             term_frequency = index.get_tf(doc_id, term)
             print(term_frequency)
 
+        case "idf":
+            print("Calculatiing IDF")
+            idf_score = idf_command(args.term)
+            print(f"Inverse document frequency of '{args.term}': {idf_score:.2f}")
+            
         case _:
             parser.print_help()
 

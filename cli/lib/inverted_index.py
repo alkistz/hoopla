@@ -1,9 +1,12 @@
+import math
 import os
 import pickle
+import string
 from collections import Counter, defaultdict
 
-from .keyword_search import tokenise_text
-from .search_utils import CACHE_DIR, load_movies
+from nltk.stem import PorterStemmer
+
+from .search_utils import CACHE_DIR, load_movies, load_stop_wrods
 
 
 class InvertedIndex:
@@ -15,7 +18,7 @@ class InvertedIndex:
         self.docmap_path = os.path.join(CACHE_DIR, "docmap.pkl")
         self.term_frequencies_path = os.path.join(CACHE_DIR, "term_frequencies.pkl")
 
-    def get_documents(self, term: str):
+    def get_documents(self, term: str) -> list:
         """
         Get the set of documents for a given token, and return them as a list, sorted in ascending order by document ID
         """
@@ -94,3 +97,38 @@ class InvertedIndex:
     def __write_to_file(self, pickle_file, data):
         with open(pickle_file, "wb") as file:
             pickle.dump(data, file)
+
+
+def remove_punctuation(input_string: str) -> str:
+    table = str.maketrans("", "", string.punctuation)
+    result = input_string.translate(table)
+    return result
+
+
+def preprocess_string(input_string: str) -> str:
+    return remove_punctuation(input_string.lower())
+
+
+def remove_stop_words(tokens: list[str]) -> list[str]:
+    stop_words = set(load_stop_wrods())
+    return [token for token in tokens if token not in stop_words]
+
+
+def tokenise_text(input_text: str) -> list[str]:
+    stemmer = PorterStemmer()
+
+    tokens = preprocess_string(input_text).split()
+    tokens = remove_stop_words(tokens)
+    tokens = [stemmer.stem(token) for token in tokens]
+
+    return tokens
+
+
+def idf_command(term: str):
+    index = InvertedIndex()
+    index.load()
+
+    token = tokenise_text(term)[0]
+    doc_count = len(index.docmap)
+    term_doc_count = len(index.get_documents(token))
+    return math.log((doc_count + 1) / (term_doc_count + 1))
