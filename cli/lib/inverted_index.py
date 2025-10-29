@@ -42,8 +42,23 @@ class InvertedIndex:
             return 0
 
         return self.term_frequencies[int(doc_id)].get(token, 0)
-    
-    
+
+    def get_idf(self, term: str):
+        tokenised_term = tokenise_text(term)
+        if len(tokenised_term) != 1:
+            raise ValueError("More than one tokenised term")
+
+        token = tokenised_term[0]
+        doc_count = len(self.docmap)
+        term_doc_count = len(self.get_documents(token))
+
+        return math.log((doc_count + 1) / (term_doc_count + 1))
+
+    def get_tfidf(self, doc_id: str, term: str):
+        token = tokenise_text(term)[0]
+        idf_score = idf_command(token)
+        tf_score = self.get_tf(doc_id, term)
+        return tf_score * idf_score
 
     def build(self):
         """
@@ -125,21 +140,21 @@ def tokenise_text(input_text: str) -> list[str]:
 
     return tokens
 
+def tf_command(doc_id: str, term: str):
+    index = InvertedIndex()
+    index.load()
+    
+    return index.get_tf(doc_id, term)
 
 def idf_command(term: str):
     index = InvertedIndex()
     index.load()
 
-    token = tokenise_text(term)[0]
-    doc_count = len(index.docmap)
-    term_doc_count = len(index.get_documents(token))
-    return math.log((doc_count + 1) / (term_doc_count + 1))
+    return index.get_idf(term)
 
 
 def tfidf_command(doc_id: str, term: str):
     index = InvertedIndex()
     index.load()
-    token = tokenise_text(term)[0]
-    idf_score = idf_command(token)
-    tf_score = index.get_tf(doc_id, term)
-    return tf_score * idf_score
+
+    return index.get_tfidf(doc_id, term)

@@ -2,7 +2,7 @@
 
 import argparse
 
-from lib.inverted_index import InvertedIndex, idf_command, tfidf_command
+from lib.inverted_index import InvertedIndex, idf_command, tf_command, tfidf_command
 from lib.keyword_search import tokenise_text
 
 
@@ -56,21 +56,20 @@ def main() -> None:
             inverted_index.save()
 
         case "tf":
-            doc_id = args.doc_id
-            term = args.term
-            index = InvertedIndex()
-            index.load()
-            term_frequency = index.get_tf(doc_id, term)
+            print("Calculating TF")
+            term_frequency = tf_command(args.doc_id, args.term)
             print(term_frequency)
 
         case "idf":
             print("Calculatiing IDF")
             idf_score = idf_command(args.term)
             print(f"Inverse document frequency of '{args.term}': {idf_score:.2f}")
-            
+
         case "tfidf":
             tfidf_score = tfidf_command(args.doc_id, args.term)
-            print(f"TF-IDF score of '{args.term}' in document '{args.doc_id}': {tfidf_score:.2f}")
+            print(
+                f"TF-IDF score of '{args.term}' in document '{args.doc_id}': {tfidf_score:.2f}"
+            )
 
         case _:
             parser.print_help()
