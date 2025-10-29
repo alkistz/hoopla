@@ -42,6 +42,8 @@ class InvertedIndex:
             return 0
 
         return self.term_frequencies[int(doc_id)].get(token, 0)
+    
+    
 
     def build(self):
         """
@@ -132,3 +134,12 @@ def idf_command(term: str):
     doc_count = len(index.docmap)
     term_doc_count = len(index.get_documents(token))
     return math.log((doc_count + 1) / (term_doc_count + 1))
+
+
+def tfidf_command(doc_id: str, term: str):
+    index = InvertedIndex()
+    index.load()
+    token = tokenise_text(term)[0]
+    idf_score = idf_command(token)
+    tf_score = index.get_tf(doc_id, term)
+    return tf_score * idf_score
