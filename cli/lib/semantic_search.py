@@ -123,17 +123,17 @@ def search_command(query: str, limit: int = 5):
         print(f"{result['description']}\n")
 
 
-def chunk_command(text: str, chunk_size: int = 200):
+def chunk_command(text: str, chunk_size: int = 200, overlap: int = 0):
     words = text.rsplit()
     chunks = []
 
     for i in range(0, len(words), chunk_size):
-        chunk = words[i:i + chunk_size]
-        chunks.append(' '.join(chunk))
-    
+        chunk = words[i : i + chunk_size]
+        if i > 0 and overlap > 0:
+            overlap_chunk = words[i - overlap : i]
+            chunk = overlap_chunk + chunk
+        chunks.append(" ".join(chunk))
+
     print(f"Chunking {len(text)} characters")
     for i in range(len(chunks)):
         print(f"{i + 1}. {chunks[i]}")
-
-
-    
