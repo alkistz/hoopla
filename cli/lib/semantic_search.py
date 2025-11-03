@@ -121,3 +121,19 @@ def search_command(query: str, limit: int = 5):
     for i, result in enumerate(results):
         print(f"{i + 1}. {result['title']} (score: {result['score']})")
         print(f"{result['description']}\n")
+
+
+def chunk_command(text: str, chunk_size: int = 200):
+    words = text.rsplit()
+    chunks = []
+
+    for i in range(0, len(words), chunk_size):
+        chunk = words[i:i + chunk_size]
+        chunks.append(' '.join(chunk))
+    
+    print(f"Chunking {len(text)} characters")
+    for i in range(len(chunks)):
+        print(f"{i + 1}. {chunks[i]}")
+
+
+    
