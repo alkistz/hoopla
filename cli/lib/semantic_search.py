@@ -193,7 +193,7 @@ class ChunkedSemanticSearch(SemanticSearch):
         embeddings = self.model.encode(all_chunks)
         self.chunk_embeddings = embeddings
         np.save(self.chunk_embeddings_path, embeddings)
-        
+
         with open(self.chunk_metadata_path, "w") as f:
             json.dump(
                 {"chunks": chunk_metadata, "total_chunks": len(all_chunks)}, f, indent=2
