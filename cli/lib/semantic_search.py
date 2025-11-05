@@ -215,9 +215,62 @@ class ChunkedSemanticSearch(SemanticSearch):
 
         return self.build_chunk_embeddings(documents)
 
+    def search_chunks(self, query: str, limit: int = 10):
+        if self.chunk_metadata is None or self.chunk_embeddings is None:
+            raise ValueError("You need to generate the embeddings first")
+
+        query_embedding = self.generate_embedding(query)
+        chunk_scores = []
+        for index, embedding in enumerate(self.chunk_embeddings):
+            chunk_scores.append(
+                {
+                    "chunk_idx": self.chunk_metadata[index].get("chunk_idx"),
+                    "movie_idx": self.chunk_metadata[index].get("movie_idx"),
+                    "score": cosine_similarity(query_embedding, embedding),
+                }
+            )
+
+        movie_scores = {}
+        for chunk_score in chunk_scores:
+            movie_idx = chunk_score.get("movie_idx")
+            score = chunk_score.get("score")
+
+            if movie_idx not in movie_scores:
+                movie_scores[movie_idx] = score
+            elif movie_scores[movie_idx] < score:
+                movie_scores[movie_idx] = score
+
+        sorted_movies = sorted(movie_scores.items(), key=lambda x: x[1], reverse=True)
+
+        results = []
+        for movie_idx, score in sorted_movies[:limit]:
+            doc = self.documents[movie_idx]
+            results.append(
+                {
+                    "id": doc["id"],
+                    "title": doc["title"],
+                    "document": doc["description"][:100],
+                    "score": round(score, 4),
+                    "metadata": {}
+                }
+            )
+
+        return results
+
 
 def embed_chunks_command():
     documents = load_movies()
     chunked_semantic_search = ChunkedSemanticSearch()
     embeddings = chunked_semantic_search.load_or_create_chunk_embeddings(documents)
     print(f"Generated {len(embeddings)} chunked embeddings")
+
+def search_chunked_command(query: str, limit: int = 5):
+    movies = load_movies()
+    search = ChunkedSemanticSearch()
+    search.load_or_create_chunk_embeddings(movies)
+    results = search.search_chunks(query, limit)
+
+    for result in results:
+        print(f"\n{result["id"]}. {result["title"]} (score: {result["score"]:.4f})")
+        print(f"   {result["document"]}...")
+

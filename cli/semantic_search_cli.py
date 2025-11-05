@@ -7,6 +7,7 @@ from lib.semantic_search import (
     embed_chunks_command,
     embed_query_text,
     embed_text,
+    search_chunked_command,
     search_command,
     semantic_chunk,
     verify_embeddings,
@@ -66,6 +67,14 @@ def main():
         "embed_chunks", help="Create chunk embeddings for all the movies"
     )
 
+    search_chunks_parser = subparsers.add_parser(
+        "search_chunked", help="Semantic search with chunks"
+    )
+    search_chunks_parser.add_argument("query", type=str, help="query to search against")
+    search_chunks_parser.add_argument(
+        "--limit", type=int, default=5, help="How many results would you like?"
+    )
+
     args = parser.parse_args()
 
     match args.command:
@@ -85,6 +94,8 @@ def main():
             semantic_chunk(args.text, args.max_chunk_size, args.overlap)
         case "embed_chunks":
             embed_chunks_command()
+        case "search_chunked":
+            search_chunked_command(args.query, args.limit)
         case _:
             parser.print_help()
 
