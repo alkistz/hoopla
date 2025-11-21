@@ -272,6 +272,15 @@ class ChunkedSemanticSearch(SemanticSearch):
         return results
 
 
+def semantic_chunk_command(text: str, max_chunk_size: int = 4, overlap: int = 0):
+    chunks = semantic_chunk(text, max_chunk_size, overlap)
+    if not chunks:
+        print("1. ")
+    else:
+        for i, chunk in enumerate(chunks):
+            print(f"{i + 1}. {chunk}")
+
+
 def embed_chunks_command():
     documents = load_movies()
     chunked_semantic_search = ChunkedSemanticSearch()

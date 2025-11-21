@@ -9,7 +9,7 @@ from lib.semantic_search import (
     embed_text,
     search_chunked_command,
     search_command,
-    semantic_chunk,
+    semantic_chunk_command,
     verify_embeddings,
     verify_model,
 )
@@ -91,7 +91,7 @@ def main():
         case "chunk":
             chunk_command(args.text, args.chunk_size, args.overlap)
         case "semantic_chunk":
-            semantic_chunk(args.text, args.max_chunk_size, args.overlap)
+            semantic_chunk_command(args.text, args.max_chunk_size, args.overlap)
         case "embed_chunks":
             embed_chunks_command()
         case "search_chunked":
