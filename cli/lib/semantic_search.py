@@ -161,7 +161,8 @@ def semantic_chunk(text: str, max_chunk_size: int = 4, overlap: int = 0):
         chunk = [
             sentence.strip() for sentence in sentences[i:chunk_end] if sentence.strip()
         ]
-        chunks.append(" ".join(chunk))
+        if chunk:
+            chunks.append(" ".join(chunk))
 
         if chunk_end >= len(sentences):
             break
