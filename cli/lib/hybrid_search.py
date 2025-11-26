@@ -94,3 +94,7 @@ def weighted_search_command(query, alpha, limit=5):
         print(f"   BM25: {result['bm25']:.3f}")
         print("   " + result["doc"]["description"][:100] + "...")
         print("\n")
+
+
+def rrf_search_command(query: str, k: int = 60, limit: int = 5):
+    pass

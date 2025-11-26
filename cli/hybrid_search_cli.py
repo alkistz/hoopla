@@ -29,6 +29,8 @@ def main() -> None:
         "--limit", type=int, default=5, help="Search results limit"
     )
 
+    
+
     args = parser.parse_args()
 
     match args.command:
