@@ -1,5 +1,7 @@
 import argparse
 
+from lib.hybrid_search import weighted_search_command
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Hybrid Search CLI")
@@ -46,6 +48,9 @@ def main() -> None:
                 ]
             for score in normalised_scores:
                 print(f"* {score:.4f}")
+
+        case "weighted-search":
+            weighted_search_command(args.query, args.alpha, args.limit)
         case _:
             parser.print_help()
 
