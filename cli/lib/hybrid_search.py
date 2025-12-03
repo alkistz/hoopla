@@ -57,10 +57,52 @@ class HybridSearch:
             final_results.values(), key=lambda x: x["hybrid_score"], reverse=True
         )
 
-        return sorted_results[:5]
+        return sorted_results[:limit]
 
     def rrf_search(self, query, k, limit=10):
-        raise NotImplementedError("RRF hybrid search is not implemented yet.")
+        final_results = {}
+        bm25_results = self._bm25_search(query, limit * 500)
+        semantic_results = self.semantic_search.search_chunks(query, limit=limit * 500)
+
+        for i, doc in enumerate(bm25_results):
+            doc_id = doc["id"]
+            rrf_score = calculate_rrf_score(i, k)
+            if final_results.get(doc_id):
+                final_results[doc_id]["rrf_score"] = (
+                    final_results[doc_id]["rrf_score"] + rrf_score
+                )
+                final_results[doc_id]["bm25_rank"] = i
+            else:
+                final_results[doc_id] = {
+                    "doc": doc,
+                    "rrf_score": rrf_score,
+                    "bm25_rank": i,
+                }
+
+        for i, doc in enumerate(semantic_results):
+            doc_id = doc["id"]
+            rrf_score = calculate_rrf_score(i, k)
+            if final_results.get(doc_id):
+                final_results[doc_id]["rrf_score"] = (
+                    final_results[doc_id]["rrf_score"] + rrf_score
+                )
+                final_results[doc_id]["semantic_rank"] = i
+            else:
+                final_results[doc_id] = {
+                    "doc": doc,
+                    "rrf_score": rrf_score,
+                    "semantic_rank": i,
+                }
+
+        sorted_results = sorted(
+            final_results.values(), key=lambda x: x["rrf_score"], reverse=True
+        )
+
+        return sorted_results[:limit]
+
+
+def calculate_rrf_score(rank, k=60):
+    return 1 / (k + rank)
 
 
 def hybrid_score(bm25_score, semantic_score, alpha=ALPHA):
@@ -97,4 +139,15 @@ def weighted_search_command(query, alpha, limit=5):
 
 
 def rrf_search_command(query: str, k: int = 60, limit: int = 5):
-    pass
+    docs = load_movies()
+    hybrid_search = HybridSearch(docs)
+    results = hybrid_search.rrf_search(query, k, limit)
+
+    for i, result in enumerate(results):
+        print(f"{i + 1}. {result['doc']['title']}")
+        print(f"    RRF Score: {result['rrf_score']}")
+        print(
+            f"    BM25 Rank: {result.get('bm25_rank', 'N/A')}, Semantic Rank: {result.get('semantic_rank', 'N/A')}"
+        )
+        print("   " + result["doc"]["description"][:100] + "...")
+        print("\n")
