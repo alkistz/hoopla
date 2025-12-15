@@ -1,6 +1,8 @@
 import os
+from typing import Optional
 
 from .inverted_index import InvertedIndex
+from .llm_setup import improve_query
 from .search_utils import ALPHA, load_movies
 from .semantic_search import ChunkedSemanticSearch
 
@@ -138,9 +140,17 @@ def weighted_search_command(query, alpha, limit=5):
         print("\n")
 
 
-def rrf_search_command(query: str, k: int = 60, limit: int = 5):
+def rrf_search_command(
+    query: str, k: int = 60, enhance: Optional[str] = None, limit: int = 5
+):
     docs = load_movies()
     hybrid_search = HybridSearch(docs)
+
+    original_query = query
+    enhanced_query = None
+    if enhance:
+        enhanced_query = improve_query(query, method=enhance)
+        query = enhanced_query if enhanced_query else original_query
     results = hybrid_search.rrf_search(query, k, limit)
 
     for i, result in enumerate(results):

@@ -29,10 +29,21 @@ def main() -> None:
         "--limit", type=int, default=5, help="Search results limit"
     )
 
-    rrf_search_parser = subparser.add_parser("rrf-search", help="Hynrid search with Reciprocal Rank Fusion")
+    rrf_search_parser = subparser.add_parser(
+        "rrf-search", help="Hynrid search with Reciprocal Rank Fusion"
+    )
     rrf_search_parser.add_argument("query", type=str, help="Search query")
     rrf_search_parser.add_argument("--k", type=int, default=60, help="K parameter")
-    rrf_search_parser.add_argument("--limit", type=int, default=5, help="Number of search results returned.")
+    rrf_search_parser.add_argument(
+        "--limit", type=int, default=5, help="Number of search results returned."
+    )
+
+    rrf_search_parser.add_argument(
+        "--enhance",
+        type=str,
+        choices=["spell", "rewrite", "expand"],
+        help="Query enhancement method",
+    )
 
     args = parser.parse_args()
 
@@ -57,7 +68,7 @@ def main() -> None:
         case "weighted-search":
             weighted_search_command(args.query, args.alpha, args.limit)
         case "rrf-search":
-            rrf_search_command(args.query, args.k, args.limit)
+            rrf_search_command(args.query, args.k, args.enhance, args.limit)
         case _:
             parser.print_help()
 
