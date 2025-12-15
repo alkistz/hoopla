@@ -12,3 +12,4 @@ wheels/
 # Data and cache files
 data/
 cache/
+.env
