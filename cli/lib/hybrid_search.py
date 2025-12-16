@@ -2,7 +2,7 @@ import os
 from typing import Optional
 
 from .inverted_index import InvertedIndex
-from .llm_setup import improve_query
+from .llm_setup import improve_query, score_movie
 from .search_utils import ALPHA, load_movies
 from .semantic_search import ChunkedSemanticSearch
 
@@ -141,10 +141,17 @@ def weighted_search_command(query, alpha, limit=5):
 
 
 def rrf_search_command(
-    query: str, k: int = 60, enhance: Optional[str] = None, limit: int = 5
+    query: str,
+    k: int = 60,
+    enhance: Optional[str] = None,
+    rerank_method: Optional[str] = None,
+    limit: int = 5,
 ):
     docs = load_movies()
     hybrid_search = HybridSearch(docs)
+
+    if rerank_method == "individual":
+        limit = limit * 5
 
     original_query = query
     enhanced_query = None
@@ -154,7 +161,16 @@ def rrf_search_command(
     results = hybrid_search.rrf_search(query, k, limit)
 
     for i, result in enumerate(results):
+        llm_score = score_movie(query=query, doc=result["doc"])
+        results[i]["llm_score"] = llm_score
+
+    if rerank_method:
+        results = sorted(results, key=lambda x: x["llm_score"], reverse=True)
+
+    for i, result in enumerate(results):
         print(f"{i + 1}. {result['doc']['title']}")
+        if rerank_method:
+            print(f"    Rerank Score: {int(result['llm_score']):.3f}/10")
         print(f"    RRF Score: {result['rrf_score']}")
         print(
             f"    BM25 Rank: {result.get('bm25_rank', 'N/A')}, Semantic Rank: {result.get('semantic_rank', 'N/A')}"

@@ -36,6 +36,21 @@ def improve_query(query: str, method: str):
         print("No API key")
 
 
+def score_movie(query: str, doc):
+    try:
+        client = create_gemini_client()
+        prompt = rerank_prompt(query, doc)
+
+        response = client.models.generate_content(
+            model="gemini-2.0-flash-001",
+            contents=prompt,
+        )
+
+        return response.text
+    except ValueError:
+        print("No API key")
+
+
 def enchance_prompt(query: str) -> str:
     return f"""
 Fix any spelling errors in this movie search query.
@@ -84,3 +99,20 @@ Examples:
 
 Query: "{query}"
 """
+
+
+def rerank_prompt(query: str, doc):
+    return f"""Rate how well this movie matches the search query.
+
+Query: "{query}"
+Movie: {doc.get("title", "")} - {doc.get("document", "")}
+
+Consider:
+- Direct relevance to query
+- User intent (what they're looking for)
+- Content appropriateness
+
+Rate 0-10 (10 = perfect match).
+Give me ONLY the number in your response, no other text or explanation.
+
+Score:"""
