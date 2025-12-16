@@ -46,7 +46,10 @@ def main() -> None:
     )
 
     rrf_search_parser.add_argument(
-        "--rerank-method", type=str, choices=["individual"], help="LLM based re-ranking"
+        "--rerank-method",
+        type=str,
+        choices=["individual", "batch"],
+        help="LLM based re-ranking",
     )
 
     args = parser.parse_args()

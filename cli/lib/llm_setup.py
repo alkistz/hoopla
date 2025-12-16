@@ -1,3 +1,4 @@
+import json
 import os
 
 from dotenv import load_dotenv
@@ -47,6 +48,24 @@ def score_movie(query: str, doc):
         )
 
         return response.text
+    except ValueError:
+        print("No API key")
+
+
+def batch_rank_movies(query: str, doc_list_str: list) -> list:
+    try:
+        client = create_gemini_client()
+        prompt = rerank_batch_prompt(query, doc_list_str)
+
+        response = client.models.generate_content(
+            model="gemini-2.0-flash-001",
+            contents=prompt,
+        )
+
+        if not response.text:
+            return []
+
+        return json.loads(response.text)
     except ValueError:
         print("No API key")
 
@@ -101,7 +120,7 @@ Query: "{query}"
 """
 
 
-def rerank_prompt(query: str, doc):
+def rerank_prompt(query: str, doc) -> str:
     return f"""Rate how well this movie matches the search query.
 
 Query: "{query}"
@@ -116,3 +135,17 @@ Rate 0-10 (10 = perfect match).
 Give me ONLY the number in your response, no other text or explanation.
 
 Score:"""
+
+
+def rerank_batch_prompt(query: str, doc_list_str: list) -> str:
+    return f"""Rank these movies by relevance to the search query.
+
+Query: "{query}"
+
+Movies:
+{doc_list_str}
+
+Return ONLY the IDs in order of relevance (best match first). Return a valid JSON list, nothing else. For example:
+
+[75, 12, 34, 2, 1]
+"""

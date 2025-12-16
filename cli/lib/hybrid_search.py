@@ -2,7 +2,7 @@ import os
 from typing import Optional
 
 from .inverted_index import InvertedIndex
-from .llm_setup import improve_query, score_movie
+from .llm_setup import improve_query, rerank_batch_prompt, score_movie
 from .search_utils import ALPHA, load_movies
 from .semantic_search import ChunkedSemanticSearch
 
@@ -164,13 +164,18 @@ def rrf_search_command(
         llm_score = score_movie(query=query, doc=result["doc"])
         results[i]["llm_score"] = llm_score
 
-    if rerank_method:
+    if rerank_method == "individual":
         results = sorted(results, key=lambda x: x["llm_score"], reverse=True)
+    elif rerank_method == "batch":
+        ranks = rerank_batch_prompt(query, results)
+        results = sorted(results, key=lambda x: ranks.index(str(x["doc"]["id"])))
 
     for i, result in enumerate(results):
         print(f"{i + 1}. {result['doc']['title']}")
-        if rerank_method:
+        if rerank_method == "Individual":
             print(f"    Rerank Score: {int(result['llm_score']):.3f}/10")
+        if rerank_method == "batch":
+            print(f"    Rerank Rank: {i + 1}")
         print(f"    RRF Score: {result['rrf_score']}")
         print(
             f"    BM25 Rank: {result.get('bm25_rank', 'N/A')}, Semantic Rank: {result.get('semantic_rank', 'N/A')}"
