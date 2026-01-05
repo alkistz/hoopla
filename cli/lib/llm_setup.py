@@ -52,7 +52,7 @@ def score_movie(query: str, doc):
         print("No API key")
 
 
-def batch_rank_movies(query: str, doc_list_str: list) -> list:
+def batch_rank_movies(query: str, doc_list_str: list) -> list | None:
     try:
         client = create_gemini_client()
         prompt = rerank_batch_prompt(query, doc_list_str)
