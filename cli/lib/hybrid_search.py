@@ -25,7 +25,7 @@ class MovieDocument:
         return cls(
             id=str(data["id"]),
             title=data["title"],
-            description=data["description"],
+            description=data.get("description", data.get("document", "")),
             genres=data.get("genres", []),
         )
 
@@ -57,7 +57,7 @@ class RRFSearchResult:
     rrf_score: float
     bm25_rank: Optional[int] = None
     semantic_rank: Optional[int] = None
-    llm_score: Optional[str] = None  # LLM returns text score
+    llm_score: Optional[str] = None
 
 
 class HybridSearch:
@@ -256,7 +256,7 @@ def _rerank_results(
     return results
 
 
-def _print_rrf_results(
+def print_rrf_results(
     results: list[RRFSearchResult],
     rerank_method: Optional[str],
     query: Optional[str] = None,
@@ -291,8 +291,12 @@ def rrf_search_command(
     enhance: Optional[str] = None,
     rerank_method: Optional[str] = None,
     limit: int = 5,
-) -> None:
-    """Execute RRF search with optional query enhancement and reranking."""
+) -> list[RRFSearchResult]:
+    """Execute RRF search with optional query enhancement and reranking.
+
+    Returns:
+        List of RRF search results.
+    """
     docs = load_movies()
     hybrid_search = HybridSearch(docs)
 
@@ -304,14 +308,9 @@ def rrf_search_command(
     results = hybrid_search.rrf_search(query, k, search_limit)
 
     if rerank_method:
-        if rerank_method == "cross_encoder":
-            print(
-                f"\nReranking top {len(results)} results using {rerank_method} method..."
-            )
-
         if rerank_method != "cross_encoder":
             results = _add_llm_scores(query, results)
         results = _rerank_results(query, results, rerank_method)
         results = results[:limit]
 
-    _print_rrf_results(results, rerank_method, query, k)
+    return results

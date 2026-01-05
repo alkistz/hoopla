@@ -1,6 +1,10 @@
 import argparse
 
-from lib.hybrid_search import rrf_search_command, weighted_search_command
+from lib.hybrid_search import (
+    print_rrf_results,
+    rrf_search_command,
+    weighted_search_command,
+)
 
 
 def main() -> None:
@@ -75,9 +79,17 @@ def main() -> None:
         case "weighted-search":
             weighted_search_command(args.query, args.alpha, args.limit)
         case "rrf-search":
-            rrf_search_command(
+            # Print reranking message if using cross_encoder
+            if args.rerank_method == "cross_encoder":
+                initial_limit = args.limit * 5
+                print(
+                    f"\nReranking top {initial_limit} results using {args.rerank_method} method..."
+                )
+
+            results = rrf_search_command(
                 args.query, args.k, args.enhance, args.rerank_method, args.limit
             )
+            print_rrf_results(results, args.rerank_method, args.query, args.k)
         case _:
             parser.print_help()
 
