@@ -2,7 +2,17 @@ import argparse
 import json
 
 from lib.hybrid_search import rrf_search_command
-from lib.models import TestCase
+from lib.models import EvaluationResult, TestCase
+
+
+def print_evaluation_result(evaluation_result: EvaluationResult):
+    print(f"- Query: {evaluation_result.query}")
+    print(f"  - Precision@{evaluation_result.k}: {evaluation_result.precision:.4f}")
+    print(f"  - Recall@{evaluation_result.k}: {evaluation_result.recall:.4f}")
+    print(f"  - F1 Score: {evaluation_result.f1_score:.4f}")
+    print(f"  - Retrieved: {', '.join(evaluation_result.retrieved)}")
+    print(f"  - Relevant: {', '.join(evaluation_result.relevant)}")
+    print()
 
 
 def main():
@@ -32,20 +42,14 @@ def main():
     for test_case in test_cases:
         results = rrf_search_command(query=test_case.query, k=60, limit=limit)
 
-        result_titles = [result.doc.title for result in results]
-        golden_titles = test_case.relevant_docs
+        evaluation_result = EvaluationResult(
+            query=test_case.query,
+            retrieved=[result.doc.title for result in results],
+            relevant=test_case.relevant_docs,
+            k=limit,
+        )
 
-        result_set = set(result_titles)
-        golden_set = set(golden_titles)
-        relevant_retrieved = len(result_set.intersection(golden_set))
-
-        precision = relevant_retrieved / limit if limit > 0 else 0.0
-
-        print(f"- Query: {test_case.query}")
-        print(f"  - Precision@{limit}: {precision:.4f}")
-        print(f"  - Retrieved: {', '.join(result_titles)}")
-        print(f"  - Relevant: {', '.join(golden_titles)}")
-        print()
+        print_evaluation_result(evaluation_result)
 
 
 if __name__ == "__main__":
