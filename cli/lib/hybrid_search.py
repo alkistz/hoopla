@@ -1,3 +1,4 @@
+import logging
 import os
 from dataclasses import dataclass, field
 from typing import Any, Optional
@@ -8,6 +9,14 @@ from .inverted_index import InvertedIndex
 from .llm_setup import improve_query, rerank_batch_prompt, score_movie
 from .search_utils import ALPHA, load_movies
 from .semantic_search import ChunkedSemanticSearch
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    datefmt="%H:%M:%S",
+)
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -78,12 +87,15 @@ class HybridSearch:
     def weighted_search(
         self, query: str, alpha: float, limit: int = 5
     ) -> list[WeightedSearchResult]:
+        logger.info(f"Starting weighted search for query: '{query}' with alpha={alpha}")
         final_results: dict[str, dict[str, Any]] = {}
 
+        logger.info("Executing BM25 search...")
         bm25_results = self._bm25_search(query, limit * 500)
         bm25_scores = normalise([r["score"] for r in bm25_results])
 
         if not bm25_scores:
+            logger.warning("No BM25 scores were returned.")
             raise ValueError("No bm25 scores were provided!")
 
         for i, doc in enumerate(bm25_results):
@@ -92,10 +104,12 @@ class HybridSearch:
                 final_results[doc_id] = {"doc": doc, "bm25": 0, "semantic": 0}
             final_results[doc_id]["bm25"] = bm25_scores[i]
 
+        logger.info("Executing Semantic search...")
         semantic_results = self.semantic_search.search_chunks(query, limit=limit * 500)
         semantic_scores = normalise([r["score"] for r in semantic_results])
 
         if not semantic_scores:
+            logger.warning("No semantic scores were returned.")
             raise ValueError("No semantic scores were provided!")
 
         for i, doc in enumerate(semantic_results):
@@ -118,13 +132,20 @@ class HybridSearch:
                 )
             )
 
-        # Sort by hybrid score
         results.sort(key=lambda x: x.hybrid_score, reverse=True)
-        return results[:limit]
+        top_results = results[:limit]
+        logger.info(
+            f"Returning top {len(top_results)} results from {len(results)} candidates."
+        )
+        return top_results
 
     def rrf_search(self, query: str, k: int, limit: int = 10) -> list[RRFSearchResult]:
+        logger.info(f"Starting RRF search for query: '{query}' with k={k}")
         final_results: dict[str, dict[str, Any]] = {}
+
+        logger.info("Executing BM25 search...")
         bm25_results = self._bm25_search(query, limit * 500)
+        logger.info("Executing Semantic search...")
         semantic_results = self.semantic_search.search_chunks(query, limit=limit * 500)
 
         for i, doc in enumerate(bm25_results):
@@ -166,7 +187,11 @@ class HybridSearch:
 
         # Sort by RRF score
         results.sort(key=lambda x: x.rrf_score, reverse=True)
-        return results[:limit]
+        top_results = results[:limit]
+        logger.info(
+            f"Returning top {len(top_results)} results from {len(results)} candidates."
+        )
+        return top_results
 
 
 def calculate_rrf_score(rank: int, k: int = 60) -> float:
@@ -203,20 +228,31 @@ def weighted_search_command(query: str, alpha: float, limit: int = 5) -> None:
     hybrid_search = HybridSearch(docs)
     results = hybrid_search.weighted_search(query, alpha, limit)
 
+    print("\n" + "=" * 80)
+    print(f"Hybrid Weighted Search Results for '{query}' (alpha={alpha})")
+    print("=" * 80)
+
     for i, result in enumerate(results):
-        print(f"{i + 1}. {result.doc.title}")
-        print(f"   Hybrid Score: {result.hybrid_score:.3f}")
-        print(f"   BM25: {result.bm25:.3f}")
-        print("   " + result.doc.description[:100] + "...")
-        print("\n")
+        print(f"\n{i + 1}. {result.doc.title}")
+        print(
+            f"   Scores: Hybrid={result.hybrid_score:.4f}, BM25={result.bm25:.4f}, Semantic={result.semantic:.4f}"
+        )
+        print("-" * 80)
+        description = result.doc.description
+        if len(description) > 200:
+            description = description[:197] + "..."
+        print(f"   {description}")
+    print("\n" + "=" * 80 + "\n")
 
 
 def _enhance_query(query: str, enhance_method: Optional[str]) -> str:
     """Enhance the query using the specified method."""
     if not enhance_method:
+        logger.info(f"Using original query: {query}")
         return query
 
     enhanced = improve_query(query, method=enhance_method)
+    logger.info(f"Enhanced Query: {enhanced}")
     return enhanced if enhanced else query
 
 
@@ -264,25 +300,38 @@ def print_rrf_results(
 ) -> None:
     """Print RRF search results in a formatted manner."""
     if query and k is not None:
-        print(f"\nReciprocal Rank Fusion Results for '{query}' (k={k}):")
+        print("\n" + "=" * 80)
+        print(f"Reciprocal Rank Fusion Results for '{query}' (k={k})")
+        print("=" * 80)
 
     for i, result in enumerate(results):
-        print(f"{i + 1}. {result.doc.title}")
+        print(f"\n{i + 1}. {result.doc.title}")
 
+        rerank_info = ""
         if rerank_method == "individual" and result.llm_score is not None:
-            print(f"    Rerank Score: {int(result.llm_score):.3f}/10")
+            try:
+                score_val = float(result.llm_score)
+                rerank_info = f", Rerank Score: {score_val:.3f}/10"
+            except ValueError:
+                rerank_info = f", Rerank Score: {result.llm_score}"
         elif rerank_method == "batch":
-            print(f"    Rerank Rank: {i + 1}")
+            rerank_info = f", Rerank Rank: {i + 1}"
         elif rerank_method == "cross_encoder" and result.llm_score is not None:
-            print(f"   Cross Encoder Score: {float(result.llm_score):.3f}")
+            rerank_info = f", Cross Encoder Score: {float(result.llm_score):.3f}"
 
-        print(f"   RRF Score: {result.rrf_score:.3f}")
+        print(f"   Scores: RRF={result.rrf_score:.4f}{rerank_info}")
         print(
-            f"   BM25 Rank: {result.bm25_rank if result.bm25_rank is not None else 'N/A'}, "
-            f"Semantic Rank: {result.semantic_rank if result.semantic_rank is not None else 'N/A'}"
+            f"   Ranks: BM25={result.bm25_rank if result.bm25_rank is not None else 'N/A'}, "
+            f"Semantic={result.semantic_rank if result.semantic_rank is not None else 'N/A'}"
         )
-        print("   " + result.doc.description[:100] + "...")
-        print()
+        print("-" * 80)
+        description = result.doc.description
+        if len(description) > 200:
+            description = description[:197] + "..."
+        print(f"   {description}")
+
+    if query and k is not None:
+        print("\n" + "=" * 80 + "\n")
 
 
 def rrf_search_command(
@@ -303,14 +352,26 @@ def rrf_search_command(
     search_limit = (
         limit * 5 if rerank_method in ("individual", "cross_encoder") else limit
     )
-
     query = _enhance_query(query, enhance)
     results = hybrid_search.rrf_search(query, k, search_limit)
+    logger.debug(f"Results from RRF search before reranking: {len(results)} matches")
 
     if rerank_method:
+        logger.info(f"Reranking results using '{rerank_method}' method...")
         if rerank_method != "cross_encoder":
             results = _add_llm_scores(query, results)
         results = _rerank_results(query, results, rerank_method)
-        results = results[:limit]
+
+    logger.debug(f"Results sorted/reranked: {len(results)} matches")
+
+    # Log intermediate results before final limiting
+    logger.info("Intermediate results before final limit:")
+    for i, result in enumerate(results):
+        score_info = f"RRF Score: {result.rrf_score:.4f}"
+        if result.llm_score:
+            score_info += f", LLM Score: {result.llm_score}"
+        logger.info(f"{i + 1}. {result.doc.title} ({score_info})")
+
+    results = results[:limit]
 
     return results
