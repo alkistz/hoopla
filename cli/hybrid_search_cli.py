@@ -56,6 +56,12 @@ def main() -> None:
         help="LLM based re-ranking",
     )
 
+    rrf_search_parser.add_argument(
+        "--evaluate",
+        type=bool,
+        help="Use an LLM to judge the results"
+    )
+
     args = parser.parse_args()
 
     match args.command:
