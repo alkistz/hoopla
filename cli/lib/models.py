@@ -43,3 +43,6 @@ class EvaluationResult:
     @property
     def f1_score(self):
         return 2 * (self.precision * self.recall) / (self.precision + self.recall)
+
+
+

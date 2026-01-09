@@ -57,9 +57,7 @@ def main() -> None:
     )
 
     rrf_search_parser.add_argument(
-        "--evaluate",
-        type=bool,
-        help="Use an LLM to judge the results"
+        "--evaluate", action="store_true", help="Use an LLM to judge the results"
     )
 
     args = parser.parse_args()
@@ -95,6 +93,38 @@ def main() -> None:
             results = rrf_search_command(
                 args.query, args.k, args.enhance, args.rerank_method, args.limit
             )
+
+            if args.evaluate:
+                from lib.llm_setup import evaluate_results
+
+                # Format results for LLM evaluation
+                formatted_results = [
+                    f"{i + 1}. {result.doc.title} - {result.doc.description[:200]}"
+                    for i, result in enumerate(results)
+                ]
+
+                # Get LLM scores (returns list of 0-3 scores in same order)
+                scores = evaluate_results(args.query, formatted_results)
+
+                # Attach scores to results and sort by score (descending)
+                for result, score in zip(results, scores):
+                    result.llm_score = str(score)
+
+                results = sorted(
+                    results,
+                    key=lambda x: int(x.llm_score) if x.llm_score else 0,
+                    reverse=True,
+                )
+
+                print("\n" + "=" * 80)
+                print(f"LLM Evaluation Results for '{args.query}'")
+                print("=" * 80)
+                for i, result in enumerate(results, 1):
+                    print(
+                        f"{i}. {result.doc.title} - Relevance Score: {result.llm_score}/3"
+                    )
+                print("=" * 80 + "\n")
+
             print_rrf_results(results, args.rerank_method, args.query, args.k)
         case _:
             parser.print_help()

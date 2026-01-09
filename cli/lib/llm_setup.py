@@ -70,6 +70,20 @@ def batch_rank_movies(query: str, doc_list_str: list) -> list | None:
         print("No API key")
 
 
+def evaluate_results(query: str, formatted_results: list):
+    client = create_gemini_client()
+    prompt = llm_evaluation_prompt(query, formatted_results)
+
+    response = client.models.generate_content(
+        model="gemini-2.0-flash-001", contents=prompt
+    )
+
+    if not response.text:
+        return []
+
+    return json.loads(response.text)
+
+
 def enchance_prompt(query: str) -> str:
     return f"""
 Fix any spelling errors in this movie search query.
