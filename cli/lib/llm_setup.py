@@ -3,6 +3,7 @@ import os
 
 from dotenv import load_dotenv
 from google import genai
+from google.genai import types
 
 
 def create_gemini_client():
@@ -301,3 +302,27 @@ Instructions:
 - Talk like a normal person would in a chat conversation
 
 Answer:"""
+
+
+def rewrite_query_with_image(image_data: bytes, mime_type: str, query: str):
+    """Rewrite a text query based on an image using Gemini's multimodal capabilities."""
+    client = create_gemini_client()
+
+    system_prompt = """Given the included image and text query, rewrite the text query to improve search results from a movie database. Make sure to:
+- Synthesize visual and textual information
+- Focus on movie-specific details (actors, scenes, style, etc.)
+- Return only the rewritten query, without any additional commentary"""
+
+    # Build request parts
+    parts = [
+        system_prompt,
+        types.Part.from_bytes(data=image_data, mime_type=mime_type),
+        query.strip(),
+    ]
+
+    # Send query to Gemini
+    response = client.models.generate_content(
+        model="gemini-2.0-flash-exp", contents=parts
+    )
+
+    return response
