@@ -42,7 +42,8 @@ def main():
     response = rewrite_query_with_image(img, mime, args.query)
 
     # Print results
-    print(f"Rewritten query: {response.text.strip()}")
+    rewritten_text = response.text.strip() if response.text else ""
+    print(f"Rewritten query: {rewritten_text}")
     if response.usage_metadata is not None:
         print(f"Total tokens:    {response.usage_metadata.total_token_count}")
 
