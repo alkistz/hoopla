@@ -84,6 +84,19 @@ def evaluate_results(query: str, formatted_results: list):
     return json.loads(response.text)
 
 
+def rag_response(query: str, docs):
+    client = create_gemini_client()
+    prompt = rag_prompt(query, docs)
+
+    response = client.models.generate_content(
+        model="gemini-2.0-flash-001", contents=prompt
+    )
+
+    if not response.text:
+        return ""
+    return response.text
+
+
 def enchance_prompt(query: str) -> str:
     return f"""
 Fix any spelling errors in this movie search query.
@@ -184,3 +197,14 @@ Do NOT give any numbers out than 0, 1, 2, or 3.
 Return ONLY the scores in the same order you were given the documents. Return a valid JSON list, nothing else. For example:
 
 [2, 0, 3, 2, 0, 1]"""
+
+
+def rag_prompt(query: str, docs):
+    return f"""Answer the question or provide information based on the provided documents. This should be tailored to Hoopla users. Hoopla is a movie streaming service.
+
+Query: {query}
+
+Documents:
+{docs}
+
+Provide a comprehensive answer that addresses the query:"""
