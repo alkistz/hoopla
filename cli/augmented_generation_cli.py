@@ -1,7 +1,7 @@
 import argparse
 
 from lib.hybrid_search import rrf_search_command
-from lib.llm_setup import rag_response
+from lib.llm_setup import rag_response, summarize_results
 
 
 def main():
@@ -12,6 +12,16 @@ def main():
         "rag", help="Perform RAG (search + generate answer)"
     )
     rag_parser.add_argument("query", type=str, help="Search query for RAG")
+
+    summarize_parser = subparsers.add_parser(
+        "summarize", help="Summarizes the results of a query"
+    )
+
+    summarize_parser.add_argument("query", type=str, help="Search query for summarisation")
+
+    summarize_parser.add_argument(
+        "--limit", type=int, default=5, help="The limit of the search results"
+    )
 
     args = parser.parse_args()
 
@@ -28,6 +38,18 @@ def main():
             print()
 
             print("RAG Response:")
+            print(response)
+        case "summarize":
+            results = rrf_search_command(args.query, limit=args.limit)
+            docs = [result.doc for result in results]
+            response = summarize_results(args.query, docs)
+
+            print("Search Results")
+            for result in results:
+                print(f"- {result.doc.title}")
+            print()
+
+            print("LLM Summary")
             print(response)
 
         case _:

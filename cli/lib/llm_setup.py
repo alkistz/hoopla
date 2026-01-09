@@ -97,6 +97,19 @@ def rag_response(query: str, docs):
     return response.text
 
 
+def summarize_results(query: str, results):
+    client = create_gemini_client()
+    prompt = summarize_prompt(query, results)
+
+    response = client.models.generate_content(
+        model="gemini-2.0-flash-001", contents=prompt
+    )
+
+    if not response.text:
+        return ""
+    return response.text
+
+
 def enchance_prompt(query: str) -> str:
     return f"""
 Fix any spelling errors in this movie search query.
@@ -208,3 +221,16 @@ Documents:
 {docs}
 
 Provide a comprehensive answer that addresses the query:"""
+
+
+def summarize_prompt(query: str, results):
+    return f"""
+Provide information useful to this query by synthesizing information from multiple search results in detail.
+The goal is to provide comprehensive information so that users know what their options are.
+Your response should be information-dense and concise, with several key pieces of information about the genre, plot, etc. of each movie.
+This should be tailored to Hoopla users. Hoopla is a movie streaming service.
+Query: {query}
+Search Results:
+{results}
+Provide a comprehensive 3–4 sentence answer that combines information from multiple sources:
+"""
